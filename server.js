@@ -2,36 +2,25 @@
 var express = require('express');
 var app = express();
 var http = require("http").Server(app);
+var io = require('socket.io')(http);
 
-//mysql 접속
-var mysql = require('mysql')
-
-var conn = mysql.createConnection({
-  host: '',
-  user: '',
-  password: '',
-  port: '',
-  database: ''
-
-});
+var seq = 0;
+var userList = [];
 
 app.get("/", function (req, res) {
-  var sql = "SELECT * FROM USER";
-
-  conn.query(sql, function (err, result) {
-    if (err) {
-      console.log(result)
-      res.sendFile(__dirname + "/index.html");
-    }
-    else {
-      console.log(result)
-      res.sendFile(__dirname + "/index.html");
-    }
-
-  });
+  res.sendFile(__dirname + "/index.html");
 });
 
+io.on('connection', function (socket) {
+  seq = seq + 1;
+  userId = 'user_' + seq
+  userList.concat(userId)
+  socket.on('new', function (data) {
+    
+    socket.emit('new', '{"userId":' + userId + '}');
+  });
 
+});
 
 http.listen(8000, function () {
   console.log("Listening on *:8000");

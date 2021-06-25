@@ -8,7 +8,10 @@
 </head>
 
 <body>
-  <h1>Welcome</h1>
+  <h1><span id="user-name"></span> 님 환영합니다!</h1>
+  <div style="width:70vw; height:50vh; border-style: dotted;">
+
+  </div>
   <form>
     <fieldset>
       <span>ID: </span><input type="text"><br />
@@ -16,8 +19,73 @@
       <input type="submit" value="Sign in">
     </fieldset>
   </form>
-  <br/>
+  <br />
   <button>Sign up</button>
+
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
+  <script>
+    var socket = io();
+    var userId;
+    $(document).ready(function () {
+
+      getNewId();
+      
+    });
+
+    function getNewId() {
+      var aJson = {};
+      var send = JSON.stringify(aJson);
+      socket.emit('new', send);
+      socket.on('new', function (msg) {
+        var obj = JSON.parse(msg);
+        userId = obj.userId;
+        $('#user-name').html(obj.userId)
+      });
+    }
+    // function send_msg_for_me(obj) {
+    //   var form = obj.parentNode;
+
+    //   var aJson = { "name": form.m.value, "content": form.h.value };
+
+    //   var send = JSON.stringify(aJson);
+
+    //   socket.emit('me', send);
+    // }
+
+
+
+    $(function () {
+      $('form').submit(function (e) {
+        e.preventDefault();
+
+        var name = $('#m').val();
+        var content = $('#h').val();
+
+        var aJson = { "name": name, "content": content };
+
+        var send = JSON.stringify(aJson);
+
+        socket.emit('everybody', send);
+
+        return false;
+      });
+
+      socket.on('everybody', function (msg) {
+        var json_data = JSON.parse(msg);
+
+        $('#messages').append("<p>" + json_data.name + "</p>");
+      });
+
+      socket.on('me', function (msg) {
+        $('#messages').append("<p>" + msg + "</p>");
+      });
+
+
+    });
+
+
+  </script>
 </body>
 
 </html>
