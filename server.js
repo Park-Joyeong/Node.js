@@ -15,10 +15,8 @@ io.on('connection', function (socket) {
   seq = seq + 1;
   userId = 'user_' + seq
   userList.concat(userId)
-  socket.on('new', function (data) {
-    
-    socket.emit('new', '{"userId":' + userId + '}');
-  });
+  console.log('new connection')
+  socket.emit('new', '{"userId":' + userId + '}');
 
 });
 

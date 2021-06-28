@@ -27,20 +27,31 @@
   <script>
     var socket = io();
     var userId;
+
+    socket.on('new', function (msg) {
+        var obj = JSON.parse(msg);
+
+        console.log('sshello: ', obj.userId);
+        console.log('ssobj typeof: ', obj);
+        console.log('ssobj.userId typeof: ', obj.userId);
+        // $('#user-name').html(obj.userId)
+      });
+    getNewId();
+
     $(document).ready(function () {
 
-      getNewId();
       
+
     });
 
     function getNewId() {
-      var aJson = {};
-      var send = JSON.stringify(aJson);
-      socket.emit('new', send);
       socket.on('new', function (msg) {
         var obj = JSON.parse(msg);
-        userId = obj.userId;
-        $('#user-name').html(obj.userId)
+
+        console.log('hello: ', obj.userId);
+        console.log('obj typeof: ', obj);
+        console.log('obj.userId typeof: ', obj.userId);
+        // $('#user-name').html(obj.userId)
       });
     }
     // function send_msg_for_me(obj) {
