@@ -2,98 +2,94 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>This is my node server.</title>
 </head>
 
 <body>
   <h1><span id="user-name"></span> 님 환영합니다!</h1>
-  <div style="width:70vw; height:50vh; border-style: dotted;">
+  <div id="chatBox" style="width:70vw; height:50vh; border-style: dotted;">
 
   </div>
-  <form>
+  <form style="width:70vw;">
     <fieldset>
-      <span>ID: </span><input type="text"><br />
-      <span>Pass: </span><input type="password"><br />
-      <input type="submit" value="Sign in">
+      <span>To:&nbsp;</span>
+      <select id="socketID" name="socketID">
+        <option value=''>Everyone</option>
+      </select>
+      <input type="text" id="message" name="message" size="50">
+      <input type="submit" value="Send">
     </fieldset>
   </form>
-  <br />
-  <button>Sign up</button>
 
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
   <script>
     var socket = io();
-    var userId;
+    var myUserId;
+    var mySocketId;
+    var clients = {};
 
-    socket.on('new', function (msg) {
-        var obj = JSON.parse(msg);
-
-        console.log('sshello: ', obj.userId);
-        console.log('ssobj typeof: ', obj);
-        console.log('ssobj.userId typeof: ', obj.userId);
-        // $('#user-name').html(obj.userId)
-      });
-    getNewId();
-
-    $(document).ready(function () {
-
-      
+    socket.on('forMe', function (obj) {
+      myUserId = obj['userId'];
+      mySocketId = obj['socketId'];
+      $('#user-name').html(myUserId);
 
     });
-
-    function getNewId() {
-      socket.on('new', function (msg) {
-        var obj = JSON.parse(msg);
-
-        console.log('hello: ', obj.userId);
-        console.log('obj typeof: ', obj);
-        console.log('obj.userId typeof: ', obj.userId);
-        // $('#user-name').html(obj.userId)
-      });
-    }
-    // function send_msg_for_me(obj) {
-    //   var form = obj.parentNode;
-
-    //   var aJson = { "name": form.m.value, "content": form.h.value };
-
-    //   var send = JSON.stringify(aJson);
-
-    //   socket.emit('me', send);
-    // }
-
-
-
-    $(function () {
-      $('form').submit(function (e) {
-        e.preventDefault();
-
-        var name = $('#m').val();
-        var content = $('#h').val();
-
-        var aJson = { "name": name, "content": content };
-
-        var send = JSON.stringify(aJson);
-
-        socket.emit('everybody', send);
-
-        return false;
-      });
-
-      socket.on('everybody', function (msg) {
-        var json_data = JSON.parse(msg);
-
-        $('#messages').append("<p>" + json_data.name + "</p>");
-      });
-
-      socket.on('me', function (msg) {
-        $('#messages').append("<p>" + msg + "</p>");
-      });
-
-
+    socket.on('new', function (obj) {
+      clients = obj['clients'];
+      // $('#socketID')
     });
+
+    $('form').submit(function (e) {
+      e.preventDefault();
+      var socketID = $('#socketID').val();
+      var message = $('#message').val();
+
+      var strObj = '{ "socketID": "' + socketID + '" }';
+      var json_data = JSON.parse("{}");
+      json_data.socketID = socketID;
+      json_data.message = message;
+      socket.emit('sendMessage', json_data);
+    });
+
+
+
+    socket.on('receiveMessage', function (rtnObj) {
+      var {
+        senderSocketID,
+        targetSocketID,
+        message
+      } = rtnObj;
+
+      var senderUserId = clients[senderSocketID];
+
+      // console.log('userID:', senderUserId)
+      // console.log(senderSocketID)
+      // console.log(targetSocketID)
+      // console.log(message)
+
+      if (targetSocketID === '') {//for everyone
+        
+        console.log(senderSocketID)
+        console.log(mySocketId)
+        if (senderSocketID === mySocketId) {
+          $('#chatBox').append("<p style='color:red;'>Me" + ':&nbsp;' + message + "</p>");
+        } else {
+          $('#chatBox').append("<p>" + senderUserId + ':&nbsp;' + message + "</p>");
+        }
+          
+      } else {
+
+      }
+
+      // var json_data = JSON.parse(msg);
+
+      // $('#messages').append("<p>" + json_data.name + "</p>");
+      // $('#messages').append("<p>" + msg + "</p>");
+    });
+
+
+
 
 
   </script>
