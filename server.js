@@ -24,7 +24,6 @@ io.on('connection', function (socket) {
 
   socket.on('sendMessage', function (param) {
 
-    console.log(socket);
     var senderSocketID = socket.id;
     var targetSocketID = param.socketID;
     var message = param.message;
