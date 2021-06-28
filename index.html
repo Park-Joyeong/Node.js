@@ -90,6 +90,7 @@
       json_data.socketID = socketID;
       json_data.message = message;
       socket.emit('sendMessage', json_data);
+      $('#message').val('');
     });
 
 

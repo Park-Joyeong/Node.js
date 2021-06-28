@@ -58,6 +58,12 @@ io.on('connection', function (socket) {
     // socket.emit('forMe', sendObj);
     // io.emit('new', sendObj);
 
+  });//sendMessage()
+
+  socket.on("disconnect", (reason) => {
+    console.log('disconnect');
+    console.log(reason);
+    console.log(socket.id);
   });
 
 });
