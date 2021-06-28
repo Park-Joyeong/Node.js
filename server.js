@@ -19,6 +19,7 @@ io.on('connection', function (socket) {
   sendObj['userId'] = userId;
   sendObj['socketId'] = socket.id;
   sendObj['clients'] = clients;
+  sendObj['connectStatus'] = 'connected';
   socket.emit('forMe', sendObj);
   io.emit('new', sendObj);
 

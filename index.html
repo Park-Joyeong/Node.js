@@ -33,11 +33,51 @@
       myUserId = obj['userId'];
       mySocketId = obj['socketId'];
       $('#user-name').html(myUserId);
+      var clients = obj['clients'];
+      $('#socketID > option').remove();
+      $('#socketID').append(new Option("Everyone", ""));
+      for (var key in clients) {
+        var value = clients[key];
+        $('#socketID').append(
+          '<option value="'
+          + key + '">'
+          + value
+          + '</option>'
+        );
+      }
+    });//forMe
 
-    });
+
     socket.on('new', function (obj) {
-      clients = obj['clients'];
-      // $('#socketID')
+      var {
+        userId,
+        socketId,
+        clients,
+        connectStatus,
+      } = obj;
+
+      if (obj['socketId'] === mySocketId) {
+        return;
+      }
+
+      if(connectStatus === 'connected'){
+        console.log('inin')
+        $('#socketID').append(
+          '<option value="'
+          + socketId + '">'
+          + userId
+          + '</option>'
+        );
+      } else if(connectStatus === 'disconnected') {
+
+      }
+      console.log('This is it.');
+      console.log(userId);
+      console.log(socketId);
+      console.log(clients);
+      console.log(connectStatus);
+
+
     });
 
     $('form').submit(function (e) {
@@ -69,7 +109,7 @@
       // console.log(message)
 
       if (targetSocketID === '') {//for everyone
-        
+
         console.log(senderSocketID)
         console.log(mySocketId)
         if (senderSocketID === mySocketId) {
@@ -77,7 +117,7 @@
         } else {
           $('#chatBox').append("<p>" + senderUserId + ':&nbsp;' + message + "</p>");
         }
-          
+
       } else {
 
       }
