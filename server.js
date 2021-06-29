@@ -22,7 +22,7 @@ var conn = mysql.createConnection({
 
 conn.connect(function(err) {
   if (err) throw err;
-  console.log("Connected!");
+  console.log("DBConnected!");
 });
 
 
@@ -30,62 +30,62 @@ app.get("/", function (req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
-// io.on('connection', function (socket) {
-//   seq = seq + 1;
-//   userId = 'User_' + seq
-//   clients[socket.id] = userId;
-//   var sendObj = {}
-//   sendObj['userId'] = userId;
-//   sendObj['socketId'] = socket.id;
-//   sendObj['clients'] = clients;
-//   sendObj['connectStatus'] = 'connected';
-//   socket.emit('forMe', sendObj);
-//   io.emit('new', sendObj);
+io.on('connection', function (socket) {
+  seq = seq + 1;
+  userId = 'User_' + seq
+  clients[socket.id] = userId;
+  var sendObj = {}
+  sendObj['userId'] = userId;
+  sendObj['socketId'] = socket.id;
+  sendObj['clients'] = clients;
+  sendObj['connectStatus'] = 'connected';
+  socket.emit('forMe', sendObj);
+  io.emit('new', sendObj);
 
-//   socket.on('sendMessage', function (param) {
+  socket.on('sendMessage', function (param) {
 
-//     var senderSocketID = socket.id;
-//     var targetSocketID = param.socketID;
-//     var message = param.message;
+    var senderSocketID = socket.id;
+    var targetSocketID = param.socketID;
+    var message = param.message;
 
-//     sendObj = {};
-//     sendObj['senderSocketID'] = senderSocketID;
-//     sendObj['targetSocketID'] = targetSocketID;
-//     sendObj['message'] = message;
+    sendObj = {};
+    sendObj['senderSocketID'] = senderSocketID;
+    sendObj['targetSocketID'] = targetSocketID;
+    sendObj['message'] = message;
 
-//     if (targetSocketID === '') {
-//       console.log('For everyone');
-//       io.emit('receiveMessage', sendObj);
-//     } else {
-//       console.log('For one persons');
-//     }
-//     // console.log(targetSocketID);
-//     // console.log(message);
+    if (targetSocketID === '') {
+      console.log('For everyone');
+      io.emit('receiveMessage', sendObj);
+    } else {
+      console.log('For one persons');
+    }
+    // console.log(targetSocketID);
+    // console.log(message);
 
-//     //   sendObj['userId'] = userId;
-//     // sendObj['clients'] = clients;
-//     // socket.emit('forMe', sendObj);
-//     // io.emit('new', sendObj);
+    //   sendObj['userId'] = userId;
+    // sendObj['clients'] = clients;
+    // socket.emit('forMe', sendObj);
+    // io.emit('new', sendObj);
 
-//     //io.emit('receiveMessage', )
-//     // seq = seq + 1;
-//     // userId = 'User_' + seq
-//     // clients[socket.id] = userId;
-//     // var sendObj = {}
-//     // sendObj['userId'] = userId;
-//     // sendObj['clients'] = clients;
-//     // socket.emit('forMe', sendObj);
-//     // io.emit('new', sendObj);
+    //io.emit('receiveMessage', )
+    // seq = seq + 1;
+    // userId = 'User_' + seq
+    // clients[socket.id] = userId;
+    // var sendObj = {}
+    // sendObj['userId'] = userId;
+    // sendObj['clients'] = clients;
+    // socket.emit('forMe', sendObj);
+    // io.emit('new', sendObj);
 
-//   });//sendMessage()
+  });//sendMessage()
 
-//   socket.on("disconnect", (reason) => {
-//     console.log('disconnect');
-//     console.log(reason);
-//     console.log(socket.id);
-//   });
+  socket.on("disconnect", (reason) => {
+    console.log('disconnect');
+    console.log(reason);
+    console.log(socket.id);
+  });
 
-// });
+});
 
 
 
