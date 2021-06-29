@@ -3,7 +3,7 @@ var express = require('express');
 var app = express();
 var http = require("http").Server(app);
 var io = require('socket.io')(http);
-var mysql = require( 'mysql' )
+var mysql = require('mysql')
 require('dotenv').config();
 let host = process.env.host;
 let user = process.env.user;
@@ -20,10 +20,10 @@ var conn = mysql.createConnection({
   database: database
 });
 
-conn.connect(function(err) {
-  if (err) throw err;
-  console.log("DBConnected!");
-});
+// conn.connect(function (err) {
+//   if (err) throw err;
+//   console.log("DBConnected!");
+// });
 
 
 app.get("/", function (req, res) {
@@ -31,6 +31,14 @@ app.get("/", function (req, res) {
 });
 
 io.on('connection', function (socket) {
+
+  var clientIp = socket.request.connection.remoteAddress;
+
+  console.log('ipipip')
+  console.log(clientIp);
+  return;
+
+
   seq = seq + 1;
   userId = 'User_' + seq
   clients[socket.id] = userId;
