@@ -45,6 +45,7 @@ io.on('connection', function (socket) {
   socket.on("disconnect", (reason) => {
     delete clients[socket.id];
     sendObj = {};
+    sendObj['userId'] = userId;
     sendObj['socketId'] = socket.id;
     sendObj['connectStatus'] = 'disconnected';
     io.emit('new', sendObj);
