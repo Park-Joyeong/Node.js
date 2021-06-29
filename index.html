@@ -6,17 +6,15 @@
 </head>
 
 <body>
-  <h1><span id="user-name"></span> 님 환영합니다!</h1>
+  <h1>You are <span id="user-name" style="font-size: larger; color:blueviolet;"></span> !</h1>
   <div id="chatBox" style="width:70vw; height:50vh; border-style: dotted;">
 
   </div>
-  <form style="width:70vw;">
+  <form style="width:70vw; margin-top: 10px;">
     <fieldset>
-      <span>To:&nbsp;</span>
       <select id="socketID" name="socketID">
-        <option value=''>Everyone</option>
       </select>
-      <input type="text" id="message" name="message" size="50">
+      <input type="text" id="message" name="message" size="40">
       <input type="submit" value="Send">
     </fieldset>
   </form>
@@ -32,51 +30,49 @@
     socket.on('forMe', function (obj) {
       myUserId = obj['userId'];
       mySocketId = obj['socketId'];
+      clients = obj['clients'];
+
       $('#user-name').html(myUserId);
-      var clients = obj['clients'];
-      $('#socketID > option').remove();
-      $('#socketID').append(new Option("Everyone", ""));
-      for (var key in clients) {
-        var value = clients[key];
+
+      $('#socketID').append('<option value="">Everyone</option>');
+
+      for (var eachSocketID in clients) {
+        var eachUserID = clients[eachSocketID];
+        if (eachSocketID === mySocketId) {
+          continue;
+        }
         $('#socketID').append(
           '<option value="'
-          + key + '">'
-          + value
+          + eachSocketID + '">'
+          + eachUserID
           + '</option>'
         );
       }
-    });//forMe
+    });// End of socket.on(forMe)
 
 
     socket.on('new', function (obj) {
       var {
         userId,
         socketId,
-        clients,
         connectStatus,
       } = obj;
 
-      if (obj['socketId'] === mySocketId) {
+      if (socketId === mySocketId) {//Don't need noti to myself "I'm coming"
         return;
       }
 
-      if(connectStatus === 'connected'){
-        console.log('inin')
-        $('#socketID').append(
-          '<option value="'
-          + socketId + '">'
-          + userId
-          + '</option>'
-        );
-      } else if(connectStatus === 'disconnected') {
+      if (connectStatus === 'connected') {
+        
+        clients[socketId] = userId;
+        $('#socketID').append('<option value="' + socketId + '">' + userId + '</option>');
+
+      } else if (connectStatus === 'disconnected') {
+        
+        delete clients[socketId];
+        $('#socketID > option[value=' + socketId + ']').remove();
 
       }
-      console.log('This is it.');
-      console.log(userId);
-      console.log(socketId);
-      console.log(clients);
-      console.log(connectStatus);
-
 
     });
 
@@ -91,6 +87,11 @@
       json_data.message = message;
       socket.emit('sendMessage', json_data);
       $('#message').val('');
+
+      //Case Direct Message
+      if (socketID !== '') {//Not to everyone
+        $('#chatBox').append("<p style='color:green;'>Me&nbsp;&gt;&nbsp;" + clients[socketID] + ':&nbsp;' + message + "</p>");
+      }
     });
 
 
@@ -101,35 +102,20 @@
         targetSocketID,
         message
       } = rtnObj;
-
       var senderUserId = clients[senderSocketID];
 
-      // console.log('userID:', senderUserId)
-      // console.log(senderSocketID)
-      // console.log(targetSocketID)
-      // console.log(message)
 
       if (targetSocketID === '') {//for everyone
-
-        console.log(senderSocketID)
-        console.log(mySocketId)
-        if (senderSocketID === mySocketId) {
+        if (senderSocketID === mySocketId) {//My comment
           $('#chatBox').append("<p style='color:red;'>Me" + ':&nbsp;' + message + "</p>");
-        } else {
+        } else {//Others comment
           $('#chatBox').append("<p>" + senderUserId + ':&nbsp;' + message + "</p>");
         }
 
-      } else {
-
+      } else {//DM received
+        $('#chatBox').append("<p style='color:green;'>" + senderUserId + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p>");
       }
-
-      // var json_data = JSON.parse(msg);
-
-      // $('#messages').append("<p>" + json_data.name + "</p>");
-      // $('#messages').append("<p>" + msg + "</p>");
     });
-
-
 
 
 
