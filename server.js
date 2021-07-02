@@ -1,24 +1,28 @@
-var express = require('express');
-var app = express();
-var http = require("http").Server(app);
+const express = require('express');
+const app = express();
+const http = require("http").Server(app);
+const io = require('socket.io')(http);
+
 app.use(express.static('static'));
-var io = require('socket.io')(http);
-var mysql = require('mysql')
+
+const mysql = require('mysql')
 require('dotenv').config();
-let host = process.env.host;
-let user = process.env.user;
-let password = process.env.password;
-let database = process.env.database;
+const host = process.env.host;
+const user = process.env.user;
+const password = process.env.password;
+const database = process.env.database;
 
-var seq = 0;//for naming userid 
-var clients = {};
 
-var conn = mysql.createConnection({
+const conn = mysql.createConnection({
   host: host,
   user: user,
   password: password,
   database: database
 });
+
+let seq = 0; // for naming username
+const clients = [];
+
 
 
 app.get("/", function (req, res) {
@@ -27,28 +31,66 @@ app.get("/", function (req, res) {
 
 io.on('connection', function (socket) {
 
-  seq = seq + 1;
-  var userId = 'User_' + seq
-  clients[socket.id] = userId;
+  let mySocketId = socket.id;
+  let myUserName = 'User_' + ++seq;
+  let myIpAddress = socket.request.connection.remoteAddress.substr(7);
+  if (myIpAddress === '') myIpAddress = '127.0.0.1';
+  let photoUri = 'profile_photo/basic.jpg';
+  let sendObj = {};
 
-  var sendObj = {}
-  sendObj['userId'] = userId;
-  sendObj['socketId'] = socket.id;
+  clients.push({
+    socketId: mySocketId,
+    userName: myUserName,
+    photoUri: photoUri
+  })
+
+  let sql = "\
+      INSERT INTO clients_info (\
+      socket_id,\
+      user_name,\
+      ip_address,\
+      photo_uri\
+      )\
+      VALUES ('" +
+    mySocketId + "','" +
+    myUserName + "','" +
+    myIpAddress + "','" +
+    photoUri + "'" +
+    ")\
+    ON DUPLICATE KEY\
+    UPDATE\
+    user_name = '" + myUserName + "';"
+
+  conn.query(sql, function (err, result) {
+    if (err) throw err;
+  });
+
+
+  sendObj = {};
+  sendObj['mySocketId'] = mySocketId;
+  sendObj['myUserName'] = myUserName;
   sendObj['clients'] = clients;
   socket.emit('forMe', sendObj);
 
 
+  sendObj = {};
+  sendObj['newSocketId'] = mySocketId;
+  sendObj['newUserName'] = myUserName;
   sendObj['connectStatus'] = 'connected';
-  io.emit('new', sendObj);
+  socket.broadcast.emit('new', sendObj);
+
+
 
 
   socket.on("disconnect", (reason) => {
-    delete clients[socket.id];
+    conn.query(sql, function (err, result) {
+      if (err) throw err;
+    });
     sendObj = {};
-    sendObj['userId'] = userId;
-    sendObj['socketId'] = socket.id;
+    sendObj['newSocketId'] = mySocketId;
+    sendObj['newUserName'] = myUserName;
     sendObj['connectStatus'] = 'disconnected';
-    io.emit('new', sendObj);
+    socket.broadcast.emit('new', sendObj);
   });
 
 
@@ -56,12 +98,9 @@ io.on('connection', function (socket) {
 
 
   socket.on('sendMessage', function (param) {
-    var senderIP = socket.request.connection.remoteAddress.substr(7);//::ffff:124.46.41.154
-    var senderSocketID = socket.id;
-    var senderUserID = userId;
+    var senderSocketID = mySocketId;
 
     var targetSocketID = param.targetSocketID;
-    var targetUserID = clients[targetSocketID] || "Everyone";
 
     var message = param.message;
 

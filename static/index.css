@@ -1,0 +1,30 @@
+#user-name {
+  font-size: larger;
+  color: blueviolet;
+}
+#chat-box {
+  width: 70vw;
+  height: 50vh;
+  padding: 10px;
+  overflow: auto;
+  border-style: dotted;
+}
+
+p[class=sysMSG] {
+  color:orange;
+}
+
+#form {
+  width: 70vw;
+  margin-top: 10px;
+  padding: 10px;
+  border-style: double;
+}
+img {
+  border-radius: 50%;
+}
+#file {
+  display: none;
+}
+
+

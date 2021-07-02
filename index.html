@@ -2,90 +2,70 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>This is my node server.</title>
-  <style>
-    img {
-      border-radius: 50%;
-    }
-
-    #file {
-      display: none;
-    }
-  </style>
+  <title>Cool & Fancy Chatting Room</title>
+  <link rel="stylesheet" href="/index.css">
 </head>
 
 <body>
-  <h1>You are <span id="user-name" style="font-size: larger; color:blueviolet;"></span> !</h1>
-  <div id="chatBox" style="width:70vw; height:50vh; overflow: auto; border-style: dotted;">
+  <h1>You are <span id="user-name"></span> !</h1>
+  <div id="chat-box">
 
   </div>
-  <form style="width:70vw; margin-top: 10px;">
-    <fieldset>
-      <img src="Plus.JPG" alt="Add Profile" width="50" height="50" onclick="addBtnClick();">
-      <select id="targetSocketID" name="targetSocketID">
-      </select>
-      <input type="text" id="message" name="message" size="40">
-      <input type="submit" value="Send">
-    </fieldset>
+  <form id="form">
+    <select id="targetSocketID" name="targetSocketID">
+      <option value="">Everyone</option>
+    </select>
+    <input type="text" id="message" name="message" size="40">
+    <input type="submit" value="Send">
   </form>
   <input type="file" id="file" name="file" onchange="changeProfilePhoto();">
+
+
+
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
   <script>
     var socket = io();
-    var myUserId;
+    var myUserName;
     var mySocketId;
-    var clients = {};
 
     socket.on('forMe', function (obj) {
-      myUserId = obj['userId'];
-      mySocketId = obj['socketId'];
-      clients = obj['clients'];
+      myUserName = obj['myUserName'];
+      mySocketId = obj['mySocketId'];
+      const clients = obj['clients'];
+      $('#user-name').html(myUserName);
 
-      $('#user-name').html(myUserId);
+      clients.filter(obj => obj.socketId !== mySocketId).forEach(function (obj) {
+        let { socketId, userName } = obj;
 
-      $('#targetSocketID').append('<option value="">Everyone</option>');
-
-      for (var eachSocketID in clients) {
-        var eachUserID = clients[eachSocketID];
-        if (eachSocketID === mySocketId) {
-          continue;
-        }
         $('#targetSocketID').append(
           '<option value="'
-          + eachSocketID + '">'
-          + eachUserID
+          + socketId + '">'
+          + userName
           + '</option>'
         );
-      }
+      });
+
     });// End of socket.on(forMe)
 
 
     socket.on('new', function (obj) {
-      var {
-        userId,
-        socketId,
-        connectStatus,
+      const {
+        newSocketId,
+        newUserName,
+        connectStatus
       } = obj;
 
-      if (socketId === mySocketId) {//Don't need noti to myself "I'm coming"
-        return;
-      }
 
       if (connectStatus === 'connected') {
 
-        clients[socketId] = userId;
-        $('#targetSocketID').append('<option value="' + socketId + '">' + userId + '</option>');
-        $('#chatBox').append("<p style='color:orange;'>※" + userId + ' is here.' + "</p>");
-        $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
+        $('#targetSocketID').append('<option value="' + newSocketId + '">' + newUserName + '</option>');
+        printMSG('connected', obj);
 
       } else if (connectStatus === 'disconnected') {
 
-        delete clients[socketId];
-        $('#targetSocketID > option[value=' + socketId + ']').remove();
-        $('#chatBox').append("<p style='color:orange;'>※" + userId + ' is gone.' + "</p>");
-        $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
-
+        $('#targetSocketID > option[value=' + newSocketId + ']').remove();
+        printMSG('disconnected', obj);
 
       }
 
@@ -104,8 +84,8 @@
 
       //Case Direct Message
       if (targetSocketID !== '') {//Not to everyone
-        $('#chatBox').append("<p style='color:green;'>Me&nbsp;&gt;&nbsp;" + clients[socketID] + ':&nbsp;' + message + "</p>");
-        $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
+        $('#chat-box').append("<p style='color:green;'>Me&nbsp;&gt;&nbsp;" + clients[socketID] + ':&nbsp;' + message + "</p>");
+        $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
       }
     });
 
@@ -122,25 +102,49 @@
 
       if (targetSocketID === '') {//for everyone
         if (senderSocketID === mySocketId) {//My comment
-          $('#chatBox').append("<p style='color:red;'>Me" + ':&nbsp;' + message + "</p>");
-          $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
+          $('#chat-box').append("<p style='color:red;'>Me" + ':&nbsp;' + message + "</p>");
+          $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
         } else {//Others comment
-          $('#chatBox').append("<p>" + senderUserId + ':&nbsp;' + message + "</p>");
-          $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
+          $('#chat-box').append("<p>" + senderUserId + ':&nbsp;' + message + "</p>");
+          $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
         }
 
       } else {//DM received
-        $('#chatBox').append("<p style='color:green;'>" + senderUserId + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p>");
-        $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
+        $('#chat-box').append("<p style='color:green;'>" + senderUserId + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p>");
+        $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
       }
     });
+
+    function printMSG(state, obj) {
+      const {
+        newSocketId,
+        newUserName,
+      } = obj;
+      let msg = "";
+      let type; // 0=sys, 1=dm
+      if (state === 'connected') {
+        type='sys';
+        msg = newUserName + " is here.";
+      } else if (state === 'disconnected') {
+        type='sys';
+        msg = newUserName + " is gone.";
+      }
+      if(type==='sys') {
+        $('#chat-box').append("<p class='sysMSG'>※" + msg +"</p>");
+      }
+
+      
+
+      
+      $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
+    }
 
     function addBtnClick() {
       document.getElementById("file").click();
     }
 
     function changeProfilePhoto() {
-      
+
     }
 
   </script>
