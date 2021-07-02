@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>This is my node server.</title>
+  <style>
+    img {
+      border-radius: 50%;
+    }
+
+    #file {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
@@ -12,13 +21,14 @@
   </div>
   <form style="width:70vw; margin-top: 10px;">
     <fieldset>
-      <select id="socketID" name="socketID">
+      <img src="Plus.JPG" alt="Add Profile" width="50" height="50" onclick="addBtnClick();">
+      <select id="targetSocketID" name="targetSocketID">
       </select>
       <input type="text" id="message" name="message" size="40">
       <input type="submit" value="Send">
     </fieldset>
   </form>
-
+  <input type="file" id="file" name="file" onchange="changeProfilePhoto();">
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
   <script>
@@ -34,14 +44,14 @@
 
       $('#user-name').html(myUserId);
 
-      $('#socketID').append('<option value="">Everyone</option>');
+      $('#targetSocketID').append('<option value="">Everyone</option>');
 
       for (var eachSocketID in clients) {
         var eachUserID = clients[eachSocketID];
         if (eachSocketID === mySocketId) {
           continue;
         }
-        $('#socketID').append(
+        $('#targetSocketID').append(
           '<option value="'
           + eachSocketID + '">'
           + eachUserID
@@ -63,19 +73,19 @@
       }
 
       if (connectStatus === 'connected') {
-        
+
         clients[socketId] = userId;
-        $('#socketID').append('<option value="' + socketId + '">' + userId + '</option>');
+        $('#targetSocketID').append('<option value="' + socketId + '">' + userId + '</option>');
         $('#chatBox').append("<p style='color:orange;'>※" + userId + ' is here.' + "</p>");
         $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
 
       } else if (connectStatus === 'disconnected') {
-        
+
         delete clients[socketId];
-        $('#socketID > option[value=' + socketId + ']').remove();
+        $('#targetSocketID > option[value=' + socketId + ']').remove();
         $('#chatBox').append("<p style='color:orange;'>※" + userId + ' is gone.' + "</p>");
         $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
-        
+
 
       }
 
@@ -83,18 +93,17 @@
 
     $('form').submit(function (e) {
       e.preventDefault();
-      var socketID = $('#socketID').val();
+      var targetSocketID = $('#targetSocketID').val();
       var message = $('#message').val();
 
-      var strObj = '{ "socketID": "' + socketID + '" }';
       var json_data = JSON.parse("{}");
-      json_data.socketID = socketID;
+      json_data.targetSocketID = targetSocketID;
       json_data.message = message;
       socket.emit('sendMessage', json_data);
       $('#message').val('');
 
       //Case Direct Message
-      if (socketID !== '') {//Not to everyone
+      if (targetSocketID !== '') {//Not to everyone
         $('#chatBox').append("<p style='color:green;'>Me&nbsp;&gt;&nbsp;" + clients[socketID] + ':&nbsp;' + message + "</p>");
         $('#chatBox').scrollTop($('#chatBox').prop("scrollHeight"));
       }
@@ -126,7 +135,13 @@
       }
     });
 
+    function addBtnClick() {
+      document.getElementById("file").click();
+    }
 
+    function changeProfilePhoto() {
+      
+    }
 
   </script>
 </body>

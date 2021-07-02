@@ -1,7 +1,7 @@
-//웹 서버를 만들어주는 패키지
 var express = require('express');
 var app = express();
 var http = require("http").Server(app);
+app.use(express.static('static'));
 var io = require('socket.io')(http);
 var mysql = require('mysql')
 require('dotenv').config();
@@ -60,32 +60,32 @@ io.on('connection', function (socket) {
     var senderSocketID = socket.id;
     var senderUserID = userId;
 
-    var targetSocketID = param.socketID;
+    var targetSocketID = param.targetSocketID;
     var targetUserID = clients[targetSocketID] || "Everyone";
 
     var message = param.message;
 
-    var sql = "" +
-      "INSERT INTO messages (" +
-      "sender_ip," +
-      "sender_socket_id," +
-      "sender_user_id," +
-      "target_socket_id," +
-      "target_user_id," +
-      "message" +
-      ")" +
-      "VALUES ('" +
-      (senderIP == '' ? '127.0.0.1' : senderIP) + "','" +
-      senderSocketID + "','" +
-      senderUserID + "','" +
-      (targetSocketID === '' ? 'For All' : targetSocketID) + "','" +
-      targetUserID + "','" +
-      message + "'" +
-      ");";
+    // var sql = "" +
+    //   "INSERT INTO messages (" +
+    //   "sender_ip," +
+    //   "sender_socket_id," +
+    //   "sender_user_id," +
+    //   "target_socket_id," +
+    //   "target_user_id," +
+    //   "message" +
+    //   ")" +
+    //   "VALUES ('" +
+    //   (senderIP == '' ? '127.0.0.1' : senderIP) + "','" +
+    //   senderSocketID + "','" +
+    //   senderUserID + "','" +
+    //   (targetSocketID === '' ? 'For All' : targetSocketID) + "','" +
+    //   targetUserID + "','" +
+    //   message + "'" +
+    //   ");";
 
-    conn.query(sql, function (err, result) {
-      if (err) throw err;
-    });
+    // conn.query(sql, function (err, result) {
+    //   if (err) throw err;
+    // });
 
 
 
