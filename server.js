@@ -57,9 +57,10 @@ io.on('connection', function (socket) {
     myIpAddress + "','" +
     photoUri + "'" +
     ")\
-    ON DUPLICATE KEY\
-    UPDATE\
-    user_name = '" + myUserName + "';"
+    ON DUPLICATE KEY UPDATE\
+    user_name = '" + myUserName + "', \
+    ip_address = '" + myIpAddress + "', \
+    photo_uri = '" + photoUri + "';"
 
   conn.query(sql, function (err, result) {
     if (err) throw err;
