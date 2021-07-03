@@ -21,7 +21,7 @@ const conn = mysql.createConnection({
 });
 
 let seq = 0; // for naming username
-const clients = [];
+const clients = {};
 
 
 
@@ -38,11 +38,11 @@ io.on('connection', function (socket) {
   let photoUri = 'profile_photo/basic.jpg';
   let sendObj = {};
 
-  clients.push({
+  clients[mySocketId] = {
     socketId: mySocketId,
     userName: myUserName,
     photoUri: photoUri
-  })
+  }
 
   let sql = "\
       INSERT INTO clients_info (\
@@ -84,14 +84,13 @@ io.on('connection', function (socket) {
 
 
   socket.on("disconnect", (reason) => {
-    conn.query(sql, function (err, result) {
-      if (err) throw err;
-    });
+    delete clients[mySocketId];
+
     sendObj = {};
     sendObj['newSocketId'] = mySocketId;
     sendObj['newUserName'] = myUserName;
     sendObj['connectStatus'] = 'disconnected';
-    socket.broadcast.emit('new', sendObj);
+    io.emit('new', sendObj);
   });
 
 

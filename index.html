@@ -34,17 +34,19 @@
       mySocketId = obj['mySocketId'];
       const clients = obj['clients'];
       $('#user-name').html(myUserName);
-
-      clients.filter(obj => obj.socketId !== mySocketId).forEach(function (obj) {
-        let { socketId, userName } = obj;
-
+      
+      for (var eachSocketID in clients) {
+        var eachUserName = clients[eachSocketID]['userName'];
+        if (eachSocketID === mySocketId) {
+          continue;
+        }
         $('#targetSocketID').append(
           '<option value="'
-          + socketId + '">'
-          + userName
+          + eachSocketID + '">'
+          + eachUserName
           + '</option>'
         );
-      });
+      }
 
     });// End of socket.on(forMe)
 
@@ -73,20 +75,18 @@
 
     $('form').submit(function (e) {
       e.preventDefault();
-      var targetSocketID = $('#targetSocketID').val();
-      var message = $('#message').val();
+      const targetSocketID = $('#targetSocketID').val();
+      const targetUserName = $('#targetSocketID > option:selected').text();
+      const message = $('#message').val();
 
-      var json_data = JSON.parse("{}");
+      const json_data = {};
       json_data.targetSocketID = targetSocketID;
       json_data.message = message;
       socket.emit('sendMessage', json_data);
       $('#message').val('');
 
-      //Case Direct Message
-      if (targetSocketID !== '') {//Not to everyone
-        $('#chat-box').append("<p style='color:green;'>Me&nbsp;&gt;&nbsp;" + clients[socketID] + ':&nbsp;' + message + "</p>");
-        $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
-      }
+      json_data.targetUserName = targetUserName;
+      printMSG('messageSend', json_data);
     });
 
 
@@ -119,23 +119,35 @@
       const {
         newSocketId,
         newUserName,
+        targetSocketID,
+        message,
+        targetUserName
       } = obj;
       let msg = "";
       let type; // 0=sys, 1=dm
       if (state === 'connected') {
-        type='sys';
+        type = 'sys';
         msg = newUserName + " is here.";
       } else if (state === 'disconnected') {
-        type='sys';
+        type = 'sys';
         msg = newUserName + " is gone.";
+      } else if (state === 'messageSend') {
+        if (targetSocketID === '') {
+          type = 'msgToEveryone';
+
+        } else {
+          type = 'msgToSomeone';
+          msg = 'Me&nbsp;&gt;&nbsp;' + targetUserName + ':&nbsp;' + message;
+        }
+
       }
-      if(type==='sys') {
-        $('#chat-box').append("<p class='sysMSG'>※" + msg +"</p>");
+      if (type === 'sys') {
+        $('#chat-box').append("<p class='sysMSG'>※" + msg + "</p>");
+      } else if (type === 'msgToSomeone') {
+        $('#chat-box').append("<p class='directMSG'>※" + msg + "</p>");
       }
 
-      
 
-      
       $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
     }
 
