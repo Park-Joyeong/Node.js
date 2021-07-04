@@ -36,7 +36,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel">Profile setting</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" onclick="closeBtnOnClick();" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <img id="profilePhotoInSetting" src="" width="100" height="100">
@@ -48,7 +48,8 @@
 
         </div>
         <div class="modal-footer">
-          <button id="closeBtn" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="closeBtn" onclick="closeBtnOnClick();" type="button" class="btn btn-secondary"
+            data-bs-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary" onclick="submitProfile();">Save changes</button>
         </div>
       </div>
@@ -103,9 +104,9 @@
 
       if (connectStatus === 'connected') {
         clients[newSocketId] = {
-          socketId : newSocketId,
-          userName : newUserName,
-          photoUri : newPhotoUri,
+          socketId: newSocketId,
+          userName: newUserName,
+          photoUri: newPhotoUri,
         };
         $('#targetSocketID').append('<option value="' + newSocketId + '">' + newUserName + '</option>');
         printMSG('connected', obj);
@@ -194,13 +195,13 @@
       if (type === 'sys') {
         $('#chat-box').append("<p class='sysMSG'>※" + msg + "</p><br/>");
       } else if (type === 'msgToEveryone') {
-        $('#chat-box').append("<img class='"+ mySocketId +"' src='"+ myPhotoUri +" ' width='30' height='30'><p class='myMSG'>" + msg + "</p><br/>");
+        $('#chat-box').append("<img class='" + mySocketId + "' src='" + myPhotoUri + " ' width='30' height='30'><p class='myMSG'>" + msg + "</p><br/>");
       } else if (type === 'msgToSomeone') {
-        $('#chat-box').append("<img class='"+ mySocketId +"' src='"+ myPhotoUri +" ' width='30' height='30'><p class='directMSG'>" + msg + "</p><br/>");
+        $('#chat-box').append("<img class='" + mySocketId + "' src='" + myPhotoUri + " ' width='30' height='30'><p class='directMSG'>" + msg + "</p><br/>");
       } else if (type === 'fromEveryone') {
-        $('#chat-box').append("<img class='"+ senderSocketId +"' src='"+ clients[senderSocketId].photoUri +" ' width='30' height='30'><p>" + senderUserName + ':&nbsp;' + message + "</p><br/>");
+        $('#chat-box').append("<img class='" + senderSocketId + "' src='" + clients[senderSocketId].photoUri + " ' width='30' height='30'><p>" + senderUserName + ':&nbsp;' + message + "</p><br/>");
       } else if (type === 'fromDM') {
-        $('#chat-box').append("<img class='"+ senderSocketId +"' src='"+ clients[senderSocketId].photoUri +" ' width='30' height='30'><p class='directMSG'>" + senderUserName + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p><br/>");
+        $('#chat-box').append("<img class='" + senderSocketId + "' src='" + clients[senderSocketId].photoUri + " ' width='30' height='30'><p class='directMSG'>" + senderUserName + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p><br/>");
       }
 
       $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
@@ -211,11 +212,14 @@
     }
 
     function changePhoto() {
-
       const [file] = document.getElementById("profilePhotoFile").files
-      if (file) {
-        document.getElementById("profilePhotoInSetting").src = URL.createObjectURL(file);
+      if(file){
+        document.querySelector("#profilePhotoInSetting").setAttribute("src", URL.createObjectURL(file));
+      } else {
+        document.querySelector("#profilePhotoInSetting").setAttribute("src", myPhotoUri);
       }
+      
+
 
     }
 
@@ -241,6 +245,10 @@
     }
 
 
+    function closeBtnOnClick() {
+      document.getElementById("profilePhotoFile").value = "";
+      changePhoto();
+    }
   </script>
 </body>
 

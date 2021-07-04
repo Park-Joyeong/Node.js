@@ -6,6 +6,10 @@ const multer = require('multer');
 const path = require('path');
 app.use(express.static('static'));
 
+var favicon = require('serve-favicon');
+
+app.use(favicon(__dirname + '/static/favicon.ico'));
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: function (req, file, cb) {
