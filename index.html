@@ -3,11 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <title>Cool & Fancy Chatting Room</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   <link rel="stylesheet" href="/index.css">
 </head>
 
 <body>
-  <h1>You are <span id="user-name"></span> !</h1>
+  <div class="header">
+    <h1>You are <span id="user-name"></span> !</h1>
+    <img class="setting-btn" onclick="" src="Setting.png" alt="Setting" width="50" data-bs-toggle="modal"
+      data-bs-target="#profileSettingModal">
+  </div>
+
   <div id="chat-box">
 
   </div>
@@ -18,23 +25,56 @@
     <input type="text" id="message" name="message" size="40">
     <input type="submit" value="Send">
   </form>
-  <input type="file" id="file" name="file" onchange="changeProfilePhoto();">
 
 
 
+
+  <!-- Modal -->
+  <div class="modal fade" id="profileSettingModal" tabindex="-1" aria-labelledby="profileSettingModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Profile setting</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <img id="profilePhotoInSetting" src="" width="100" height="100">
+          <button type="button" class="btn btn-secondary" onclick="addBtnClick();">Change Photo</button>
+          <form id="profileForm">
+            <input type="file" id="profilePhotoFile" name="profilePhotoFile" accept="image/png, image/jpeg"
+              onchange="changePhoto();">
+          </form>
+
+        </div>
+        <div class="modal-footer">
+          <button id="closeBtn" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" onclick="submitProfile();">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
   <script>
-    var socket = io();
-    var myUserName;
-    var mySocketId;
+    const socket = io();
+    let myUserName;
+    let mySocketId;
+    let myPhotoUri;
+    let clients;
 
     socket.on('forMe', function (obj) {
       myUserName = obj['myUserName'];
       mySocketId = obj['mySocketId'];
-      const clients = obj['clients'];
+      myPhotoUri = obj['myPhotoUri'];
+      clients = obj['clients'];
       $('#user-name').html(myUserName);
-      
+
       for (var eachSocketID in clients) {
         var eachUserName = clients[eachSocketID]['userName'];
         if (eachSocketID === mySocketId) {
@@ -47,6 +87,7 @@
           + '</option>'
         );
       }
+      document.querySelector("#profilePhotoInSetting").setAttribute("src", myPhotoUri);
 
     });// End of socket.on(forMe)
 
@@ -55,17 +96,22 @@
       const {
         newSocketId,
         newUserName,
+        newPhotoUri,
         connectStatus
       } = obj;
 
 
       if (connectStatus === 'connected') {
-
+        clients[newSocketId] = {
+          socketId : newSocketId,
+          userName : newUserName,
+          photoUri : newPhotoUri,
+        };
         $('#targetSocketID').append('<option value="' + newSocketId + '">' + newUserName + '</option>');
         printMSG('connected', obj);
 
       } else if (connectStatus === 'disconnected') {
-
+        delete clients[newSocketId]
         $('#targetSocketID > option[value=' + newSocketId + ']').remove();
         printMSG('disconnected', obj);
 
@@ -92,27 +138,21 @@
 
 
     socket.on('receiveMessage', function (rtnObj) {
-      var {
-        senderSocketID,
-        targetSocketID,
-        message
+
+      printMSG('messageReceived', rtnObj);
+
+    });
+
+    socket.on('profileChange', function (rtnObj) {
+      let {
+        socketId,
+        photoUri
       } = rtnObj;
-      var senderUserId = clients[senderSocketID];
 
+      clients[socketId].photoUri = photoUri;
 
-      if (targetSocketID === '') {//for everyone
-        if (senderSocketID === mySocketId) {//My comment
-          $('#chat-box').append("<p style='color:red;'>Me" + ':&nbsp;' + message + "</p>");
-          $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
-        } else {//Others comment
-          $('#chat-box').append("<p>" + senderUserId + ':&nbsp;' + message + "</p>");
-          $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
-        }
+      $('.' + socketId).attr('src', photoUri);
 
-      } else {//DM received
-        $('#chat-box').append("<p style='color:green;'>" + senderUserId + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p>");
-        $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
-      }
     });
 
     function printMSG(state, obj) {
@@ -121,10 +161,13 @@
         newUserName,
         targetSocketID,
         message,
-        targetUserName
+        targetUserName,
+        senderSocketId,
+        senderUserName,
+        isDM
       } = obj;
       let msg = "";
-      let type; // 0=sys, 1=dm
+      let type;
       if (state === 'connected') {
         type = 'sys';
         msg = newUserName + " is here.";
@@ -134,30 +177,69 @@
       } else if (state === 'messageSend') {
         if (targetSocketID === '') {
           type = 'msgToEveryone';
-
+          msg = 'ME: ' + message;
         } else {
           type = 'msgToSomeone';
           msg = 'Me&nbsp;&gt;&nbsp;' + targetUserName + ':&nbsp;' + message;
         }
-
+      } else if (state === 'messageReceived') {
+        if (isDM) {
+          type = 'fromDM';
+        } else {
+          type = 'fromEveryone';
+        }
       }
+
+
       if (type === 'sys') {
-        $('#chat-box').append("<p class='sysMSG'>※" + msg + "</p>");
+        $('#chat-box').append("<p class='sysMSG'>※" + msg + "</p><br/>");
+      } else if (type === 'msgToEveryone') {
+        $('#chat-box').append("<img class='"+ mySocketId +"' src='"+ myPhotoUri +" ' width='30' height='30'><p class='myMSG'>" + msg + "</p><br/>");
       } else if (type === 'msgToSomeone') {
-        $('#chat-box').append("<p class='directMSG'>※" + msg + "</p>");
+        $('#chat-box').append("<img class='"+ mySocketId +"' src='"+ myPhotoUri +" ' width='30' height='30'><p class='directMSG'>" + msg + "</p><br/>");
+      } else if (type === 'fromEveryone') {
+        $('#chat-box').append("<img class='"+ senderSocketId +"' src='"+ clients[senderSocketId].photoUri +" ' width='30' height='30'><p>" + senderUserName + ':&nbsp;' + message + "</p><br/>");
+      } else if (type === 'fromDM') {
+        $('#chat-box').append("<img class='"+ senderSocketId +"' src='"+ clients[senderSocketId].photoUri +" ' width='30' height='30'><p class='directMSG'>" + senderUserName + "&nbsp;&gt;&nbsp;Me" + ':&nbsp;' + message + "</p><br/>");
       }
-
 
       $('#chat-box').scrollTop($('#chat-box').prop("scrollHeight"));
     }
 
     function addBtnClick() {
-      document.getElementById("file").click();
+      document.getElementById("profilePhotoFile").click();
     }
 
-    function changeProfilePhoto() {
+    function changePhoto() {
+
+      const [file] = document.getElementById("profilePhotoFile").files
+      if (file) {
+        document.getElementById("profilePhotoInSetting").src = URL.createObjectURL(file);
+      }
 
     }
+
+    function submitProfile() {
+
+      const dataForm = new FormData($("#profileForm").get(0));
+      dataForm.append("socketId", mySocketId);
+      fetch("/editProfile", {
+        method: "post",
+        body: dataForm,
+        enctype: "multipart/form-data",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          myPhotoUri = data.photo_uri;
+          alert('Change saved.');
+          document.getElementById("closeBtn").click();
+          $('.' + mySocketId).attr('src', myPhotoUri);
+          const json_data = {};
+          json_data.photoUri = myPhotoUri;
+          socket.emit('profileChange', json_data);
+        });
+    }
+
 
   </script>
 </body>

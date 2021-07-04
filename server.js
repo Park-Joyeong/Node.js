@@ -2,8 +2,21 @@ const express = require('express');
 const app = express();
 const http = require("http").Server(app);
 const io = require('socket.io')(http);
-
+const multer = require('multer');
+const path = require('path');
 app.use(express.static('static'));
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'static/profile_photo');
+    },
+    filename: function (req, file, cb) {
+      cb(null, new Date().valueOf() + path.extname(file.originalname));
+    }
+  }),
+});
+
 
 const mysql = require('mysql')
 require('dotenv').config();
@@ -20,6 +33,9 @@ const conn = mysql.createConnection({
   database: database
 });
 
+
+
+
 let seq = 0; // for naming username
 const clients = {};
 
@@ -29,19 +45,34 @@ app.get("/", function (req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
+app.post('/editProfile', upload.single('profilePhotoFile'), (req, res) => {
+
+  let sql = `
+    UPDATE clients_info
+    SET photo_uri = 'profile_photo/${req.file.filename}'
+    WHERE socket_id = '${req.body.socketId}';
+  `;
+
+  conn.query(sql, function (err, result) {
+    if (err) throw err;
+  });
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ photo_uri: 'profile_photo/'+req.file.filename }));
+});
+
 io.on('connection', function (socket) {
 
   let mySocketId = socket.id;
   let myUserName = 'User_' + ++seq;
   let myIpAddress = socket.request.connection.remoteAddress.substr(7);
   if (myIpAddress === '') myIpAddress = '127.0.0.1';
-  let photoUri = 'profile_photo/basic.jpg';
+  let myPhotoUri = 'profile_photo/basic.png';
   let sendObj = {};
 
   clients[mySocketId] = {
     socketId: mySocketId,
     userName: myUserName,
-    photoUri: photoUri
+    photoUri: myPhotoUri
   }
 
   let sql = "\
@@ -55,12 +86,12 @@ io.on('connection', function (socket) {
     mySocketId + "','" +
     myUserName + "','" +
     myIpAddress + "','" +
-    photoUri + "'" +
+    myPhotoUri + "'" +
     ")\
     ON DUPLICATE KEY UPDATE\
     user_name = '" + myUserName + "', \
     ip_address = '" + myIpAddress + "', \
-    photo_uri = '" + photoUri + "';"
+    photo_uri = '" + myPhotoUri + "';"
 
   conn.query(sql, function (err, result) {
     if (err) throw err;
@@ -70,6 +101,7 @@ io.on('connection', function (socket) {
   sendObj = {};
   sendObj['mySocketId'] = mySocketId;
   sendObj['myUserName'] = myUserName;
+  sendObj['myPhotoUri'] = myPhotoUri;
   sendObj['clients'] = clients;
   socket.emit('forMe', sendObj);
 
@@ -77,6 +109,7 @@ io.on('connection', function (socket) {
   sendObj = {};
   sendObj['newSocketId'] = mySocketId;
   sendObj['newUserName'] = myUserName;
+  sendObj['newPhotoUri'] = myPhotoUri;
   sendObj['connectStatus'] = 'connected';
   socket.broadcast.emit('new', sendObj);
 
@@ -90,7 +123,7 @@ io.on('connection', function (socket) {
     sendObj['newSocketId'] = mySocketId;
     sendObj['newUserName'] = myUserName;
     sendObj['connectStatus'] = 'disconnected';
-    io.emit('new', sendObj);
+    socket.broadcast.emit('new', sendObj);
   });
 
 
@@ -104,44 +137,46 @@ io.on('connection', function (socket) {
 
     var message = param.message;
 
-    // var sql = "" +
-    //   "INSERT INTO messages (" +
-    //   "sender_ip," +
-    //   "sender_socket_id," +
-    //   "sender_user_id," +
-    //   "target_socket_id," +
-    //   "target_user_id," +
-    //   "message" +
-    //   ")" +
-    //   "VALUES ('" +
-    //   (senderIP == '' ? '127.0.0.1' : senderIP) + "','" +
-    //   senderSocketID + "','" +
-    //   senderUserID + "','" +
-    //   (targetSocketID === '' ? 'For All' : targetSocketID) + "','" +
-    //   targetUserID + "','" +
-    //   message + "'" +
-    //   ");";
+    const sql = "" +
+      "INSERT INTO messages (" +
+      "sender_socket_id," +
+      "target_socket_id," +
+      "message" +
+      ")" +
+      "VALUES ('" +
+      senderSocketID + "','" +
+      (targetSocketID === '' ? 'For All' : targetSocketID) + "','" +
+      message + "'" +
+      ");";
 
-    // conn.query(sql, function (err, result) {
-    //   if (err) throw err;
-    // });
-
+    conn.query(sql, function (err, result) {
+      if (err) throw err;
+    });
 
 
 
     sendObj = {};
-    sendObj['senderSocketID'] = senderSocketID;
-    sendObj['targetSocketID'] = targetSocketID;
+    sendObj['senderUserName'] = myUserName;
+    sendObj['senderSocketId'] = mySocketId;
     sendObj['message'] = message;
 
     if (targetSocketID === '') { // To everyone
-      io.emit('receiveMessage', sendObj);
+      sendObj['isDM'] = false;
+      socket.broadcast.emit('receiveMessage', sendObj);
     } else { //Direct message
+      sendObj['isDM'] = true;
       socket.broadcast.to(targetSocketID).emit('receiveMessage', sendObj);
     }
 
   });//sendMessage()
 
+  socket.on("profileChange", (param) => {
+
+    sendObj = {};
+    sendObj['socketId'] = mySocketId;
+    sendObj['photoUri'] = param.photoUri;
+    socket.broadcast.emit('profileChange', sendObj);
+  });
 });
 
 

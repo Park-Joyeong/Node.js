@@ -1,3 +1,15 @@
+.header {
+  width: 70vw;
+}
+
+h1 {
+  display: inline-block;
+}
+
+.setting-btn {
+  float: right;
+}
+
 #user-name {
   font-size: larger;
   color: blueviolet;
@@ -10,12 +22,20 @@
   border-style: dotted;
 }
 
-p[class=sysMSG] {
-  color:orange;
+p {
+  display: inline-block;
 }
 
-p[class=directMSG] {
-  color:green;
+p[class="sysMSG"] {
+  color: orange;
+}
+
+p[class="directMSG"] {
+  color: green;
+}
+
+p[class="myMSG"] {
+  color: red;
 }
 
 #form {
@@ -27,8 +47,6 @@ p[class=directMSG] {
 img {
   border-radius: 50%;
 }
-#file {
+#profilePhotoFile {
   display: none;
 }
-
-
