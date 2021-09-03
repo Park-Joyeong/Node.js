@@ -1,3 +1,4 @@
 .env
 upload/uploads
 static/profile_photo
+node_modules/
