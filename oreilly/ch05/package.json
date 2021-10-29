@@ -4,11 +4,13 @@
   "description": "",
   "main": "meadowlark.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint meadowlark.js lib"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "eslint": "^8.1.0",
     "jest": "^27.3.1",
     "portfinder": "^1.0.28",
     "puppeteer": "^10.4.0"
